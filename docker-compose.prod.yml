@@ -1,0 +1,80 @@
+services:
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile.prod
+    container_name: jurishaven-server-prod
+    ports:
+      - "5000:5000"
+    env_file:
+      - ./server/.env
+    environment:
+      - NODE_ENV=production
+    depends_on:
+      redis:
+        condition: service_healthy
+      meilisearch:
+        condition: service_healthy
+    networks:
+      - jurishaven-network
+    restart: unless-stopped
+
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile.prod
+    container_name: jurishaven-client-prod
+    ports:
+      - "5173:5173"
+    env_file:
+      - ./client/.env.local
+    networks:
+      - jurishaven-network
+    restart: unless-stopped
+
+  meilisearch:
+    image: getmeili/meilisearch:v1.7.3
+    container_name: jurishaven-meilisearch
+    # Port 7700 is NOT mapped to the host in production for security.
+    # It is only accessible within the jurishaven-network.
+    expose:
+      - "7700"
+    environment:
+      - MEILI_MASTER_KEY=${MEILISEARCH_API_KEY}
+      - MEILI_ENV=production
+      - MEILI_NO_ANALYTICS=true
+    volumes:
+      - meili_data:/meili_data
+    restart: unless-stopped
+    networks:
+      - jurishaven-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:7700/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: jurishaven-redis
+    # Port 6379 is NOT mapped to the host in production for security.
+    expose:
+      - "6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    networks:
+      - jurishaven-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+networks:
+  jurishaven-network:
+    driver: bridge
+
+volumes:
+  meili_data:
+  redis_data:

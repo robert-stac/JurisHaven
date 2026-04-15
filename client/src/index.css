@@ -1,0 +1,69 @@
+@import "tailwindcss";
+@config "../tailwind.config.js";
+
+@layer base {
+  :root {
+    --background: 231 23% 7%;
+    --foreground: 210 40% 98%;
+
+    --card: 222 25% 10%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 222 25% 10%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 226 91% 60%;
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 226 23% 16%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 226 23% 16%;
+    --muted-foreground: 215 20.2% 65.1%;
+
+    --accent: 226 91% 60%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 226 23% 16%;
+    --input: 226 23% 16%;
+    --ring: 226 91% 60%;
+
+    --radius: 0.5rem;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-surface text-foreground font-sans antialiased text-sm h-screen overflow-hidden selection:bg-brand-500/30;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display tracking-tight;
+  }
+}
+
+/* Glassmorphism Utilities */
+.glass {
+  @apply bg-surface-100/60 backdrop-blur-md border border-white/5;
+}
+
+.glass-card {
+  @apply bg-surface-200/50 backdrop-blur border border-white/5 shadow-xl;
+}
+
+/* Scrollbar Customization */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  @apply bg-transparent;
+}
+::-webkit-scrollbar-thumb {
+  @apply bg-surface-300 rounded-full hover:bg-surface-300/80 transition-colors;
+}
