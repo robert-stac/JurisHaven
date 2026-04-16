@@ -1,0 +1,15 @@
+name: Trigger JurisHaven Scraper
+on:
+  schedule:
+    # This runs at 08:00 and 20:00 UTC every day
+    - cron: '0 8,20 * * *'
+  workflow_dispatch: # Allows you to run it manually for testing
+
+jobs:
+  ping_render:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wake Render and Trigger Scrape
+        run: |
+          curl -X GET "https://your-render-url.onrender.com/api/scraper/trigger" \
+          -H "Authorization: Bearer ${{ secrets.SCRAPER_SECRET }}"
