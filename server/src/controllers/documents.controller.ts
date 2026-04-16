@@ -90,6 +90,38 @@ export const documentsController = {
     }
   },
 
+  getDocument: async (req: AuthRequest, res: Response) => {
+    try {
+      const { id } = req.params;
+      const documentId = id as string;
+      
+      // Determine primary and secondary collections based on prefix
+      const primaryCollection = documentId.startsWith('prec_') ? 'precedents' : 'documents';
+      const secondaryCollection = primaryCollection === 'precedents' ? 'documents' : 'precedents';
+      
+      let doc = await firestoreService.getDocument(primaryCollection, documentId);
+      
+      // Fallback to secondary collection if not found in primary
+      if (!doc) {
+        console.log(`[GetDocument] Not found in ${primaryCollection}, checking ${secondaryCollection}: ${documentId}`);
+        doc = await firestoreService.getDocument(secondaryCollection, documentId);
+      }
+      
+      if (!doc) return res.status(404).json({ error: 'Document not found' });
+      
+      // If document has a storage path, we can pre-sign it for convenience
+      if (doc.storagePath) {
+        const url = await r2StorageService.getSignedUrl(doc.storagePath, 3600);
+        return res.json({ ...doc, url });
+      }
+      
+      res.json(doc);
+    } catch (err: any) {
+      console.error('[GetDocument] Error:', err);
+      res.status(500).json({ error: 'Could not fetch document metadata' });
+    }
+  },
+
   getSecureUrl: async (req: AuthRequest, res: Response) => {
     try {
       const { id } = req.params;

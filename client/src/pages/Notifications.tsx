@@ -2,11 +2,12 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNotifications, type Notification } from '../hooks/useNotifications';
 import { ArrowLeft, Bell, Check, Clock, Trash2, Info, CheckCircle, AlertTriangle, XCircle, Loader2 } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import api from '../services/api';
 
 export default function Notifications() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const { notifications, loading } = useNotifications();
   const [localNotifications, setLocalNotifications] = useState<Notification[]>([]);
 
@@ -39,9 +40,9 @@ export default function Notifications() {
     <div className="min-h-screen bg-surface flex flex-col">
       <header className="h-16 border-b border-white/5 bg-surface/50 backdrop-blur sticky top-0 z-10 flex items-center justify-between px-6">
         <div className="flex items-center gap-4">
-          <Link to="/library" className="p-2 -ml-2 text-muted-foreground hover:text-white transition-colors">
+          <button onClick={() => navigate(-1)} className="p-2 -ml-2 text-muted-foreground hover:text-white transition-colors">
             <ArrowLeft className="w-5 h-5" />
-          </Link>
+          </button>
           <h1 className="text-lg font-display font-semibold">Real-time Notifications</h1>
         </div>
       </header>

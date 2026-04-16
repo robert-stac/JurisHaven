@@ -1,11 +1,12 @@
 import { Router } from 'express';
 import { requireAuth, requireRole, requireOneOf } from '../middleware';
+import { uploadLimiter } from '../middleware/rateLimit';
 import { precedentsController } from '../controllers/precedents.controller';
 
 const router = Router();
 
 // Sync: admin or managing_partner (based on ROLE_HIERARCHY)
-router.post('/sync', requireAuth, requireRole('managing_partner'), precedentsController.triggerSync);
+router.post('/sync', requireAuth, requireRole('managing_partner'), uploadLimiter, precedentsController.triggerSync);
 
 // Public (authenticated) routes
 router.get('/', requireAuth, precedentsController.listPrecedents);

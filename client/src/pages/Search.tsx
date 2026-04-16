@@ -43,9 +43,9 @@ export default function Search() {
     <div className="flex h-screen w-full bg-surface text-foreground flex-col overflow-hidden">
       {/* Top Search Header */}
       <header className="shrink-0 h-20 border-b border-white/5 bg-surface-50 flex items-center px-6 md:px-12 gap-6 w-full shadow-md z-10">
-        <Link to="/library" className="w-10 h-10 rounded-full hover:bg-surface-200 flex items-center justify-center transition-colors">
+        <button onClick={() => navigate(-1)} className="w-10 h-10 rounded-full hover:bg-surface-200 flex items-center justify-center transition-colors">
           <ArrowLeft className="w-5 h-5 text-muted-foreground" />
-        </Link>
+        </button>
         <form onSubmit={handleSearchSubmit} className="flex-1 max-w-4xl relative">
           <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-brand-400" />
           <input

@@ -135,7 +135,7 @@ export default function Users() {
           onClick={() => setIsInviteOpen(true)}
           className="flex items-center gap-2 bg-brand-500 hover:bg-brand-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all shadow-lg shadow-brand-500/20"
         >
-          <UserPlus className="w-4 h-4" /> Invite User
+          <UserPlus className="w-4 h-4" /> Add New User
         </button>
       </header>
 
@@ -155,6 +155,13 @@ export default function Users() {
                   className="w-full bg-surface border border-white/5 rounded-lg pl-9 pr-4 py-2 text-sm focus:outline-none focus:border-brand-500/50 transition-colors"
                 />
               </div>
+
+              <button 
+                onClick={() => setIsInviteOpen(true)}
+                className="hidden md:flex items-center gap-2 text-xs font-semibold text-brand-400 hover:text-brand-300 transition-colors"
+              >
+                <UserPlus className="w-4 h-4" /> Quick Add Member
+              </button>
             </div>
 
             <div className="overflow-visible min-h-[300px]">

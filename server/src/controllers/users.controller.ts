@@ -32,6 +32,7 @@ export const usersController = {
    * Directly create a new user (replaces email invitation)
    */
   createUser: async (req: AuthRequest, res: Response) => {
+    console.log('[CreateUser] Body:', req.body);
     try {
       const { email, password, displayName, role } = req.body;
 

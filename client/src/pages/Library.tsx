@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { Search, Upload as UploadIcon, Library as LibraryIcon, Filter, LogOut, Loader2, Bell } from 'lucide-react';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { Search, Upload as UploadIcon, Library as LibraryIcon, Filter, LogOut, Loader2, Bell, Shield } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useNotifications } from '../hooks/useNotifications';
 import { Link } from 'react-router-dom';
@@ -14,7 +14,9 @@ import 'react-pdf/dist/Page/TextLayer.css';
 pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@5.4.296/build/pdf.worker.min.mjs`;
 
 export default function Library() {
-  const { user, logout } = useAuth();
+  const { user, logout, resetPassword } = useAuth();
+  const [resetLoading, setResetLoading] = useState(false);
+  const [resetSuccess, setResetSuccess] = useState(false);
   const [documents, setDocuments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isUploadOpen, setIsUploadOpen] = useState(false);
@@ -23,33 +25,24 @@ export default function Library() {
   const [activeSection, setActiveSection] = useState<'book' | 'precedent'>('book');
   const [indexingId, setIndexingId] = useState<string | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
+  const isFetchingRef = useRef(false);
   const { notifications, unreadCount } = useNotifications();
   
   // Filter States
   const [showFilterMenu, setShowFilterMenu] = useState(false);
   const [activeFilter, setActiveFilter] = useState<string | null>(null);
+  const [precedentFilter, setPrecedentFilter] = useState<'all' | 'library'>('all');
 
   useEffect(() => {
     fetchDocuments();
   }, [activeSection]);
 
-  // Polling for indexing status updates
+  // Polling for indexing status updates - Temporarily removed to debug 429
+  /*
   useEffect(() => {
-    const hasAtLeastOneIndexing = documents.some(d => 
-      d.status === 'fetching' || d.status === 'processing'
-    );
-
-    if (hasAtLeastOneIndexing && !loading) {
-      const controller = new AbortController();
-      const interval = setInterval(() => {
-        fetchDocumentsByPolling(controller.signal);
-      }, 10000); // 10s instead of 5s
-      return () => {
-        clearInterval(interval);
-        controller.abort();
-      };
-    }
+    ...
   }, [documents, loading]);
+  */
 
   const fetchDocumentsByPolling = async (signal?: AbortSignal) => {
     try {
@@ -62,8 +55,10 @@ export default function Library() {
     }
   };
 
-  const fetchDocuments = async () => {
+  const fetchDocuments = useCallback(async () => {
+    if (isFetchingRef.current) return;
     try {
+      isFetchingRef.current = true;
       setLoading(true);
       const endpoint = activeSection === 'precedent' ? '/precedents' : `/documents?type=${activeSection}`;
       const response = await api.get(endpoint);
@@ -72,8 +67,9 @@ export default function Library() {
       console.error("Failed to load documents", error);
     } finally {
       setLoading(false);
+      isFetchingRef.current = false;
     }
-  };
+  }, [activeSection]);
 
   const handleIndex = async (e: React.MouseEvent, precedentId: string) => {
     e.stopPropagation();
@@ -116,7 +112,19 @@ export default function Library() {
   };
 
   const availablePracticeAreas = Array.from(new Set(documents.flatMap(d => d.practiceAreas || []))).filter(Boolean);
-  const displayedDocuments = activeFilter ? documents.filter(d => d.practiceAreas?.includes(activeFilter)) : documents;
+  
+  const displayedDocuments = documents.filter(d => {
+    // 1. Sector level filter (Search result filtering)
+    if (activeFilter && !d.practiceAreas?.includes(activeFilter)) return false;
+    
+    // 2. Precedent sub-tab level filter
+    if (activeSection === 'precedent' && precedentFilter === 'library') {
+      const isLibraryAddition = d.status !== 'stub' || d.isRequested === true;
+      if (!isLibraryAddition) return false;
+    }
+    
+    return true;
+  });
 
   return (
     <div className="flex h-screen w-full bg-surface">
@@ -189,7 +197,30 @@ export default function Library() {
           )}
         </nav>
 
-        <div className="pt-4 border-t border-white/5">
+        <div className="pt-4 border-t border-white/5 flex flex-col gap-2">
+          <div className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground/40">Personal Security</div>
+          <button 
+            onClick={async () => {
+              if (user?.email) {
+                setResetLoading(true);
+                try {
+                  await resetPassword(user.email);
+                  setResetSuccess(true);
+                  setTimeout(() => setResetSuccess(false), 5000);
+                } catch (err) {
+                  alert("Failed to send reset email");
+                } finally {
+                  setResetLoading(false);
+                }
+              }
+            }}
+            disabled={resetLoading}
+            className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-brand-500/10 text-muted-foreground hover:text-brand-400 text-sm font-medium transition-colors disabled:opacity-50"
+          >
+            <Shield className="w-4 h-4" />
+            {resetLoading ? 'Sending link...' : resetSuccess ? 'Email sent!' : 'Change Password'}
+          </button>
+          
           <button 
             onClick={logout}
             className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-red-500/10 text-muted-foreground hover:text-red-400 text-sm font-medium transition-colors"
@@ -236,13 +267,33 @@ export default function Library() {
         {/* Scrollable Document Grid */}
         <div className="flex-1 overflow-y-auto p-6 md:p-8">
           <div className="flex items-center justify-between mb-6 relative">
-            <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-display font-semibold">{activeSection === 'book' ? 'Legal Texts Directory' : 'Court Precedents Vault'}</h1>
-              {activeFilter && (
-                <span className="flex items-center gap-1 bg-brand-500/20 text-brand-400 text-xs px-2 py-1 rounded-full border border-brand-500/30">
-                  {activeFilter}
-                  <button onClick={() => setActiveFilter(null)} className="ml-1 hover:text-white">&times;</button>
-                </span>
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center gap-3">
+                <h1 className="text-2xl font-display font-semibold">{activeSection === 'book' ? 'Legal Texts Directory' : 'Court Precedents Vault'}</h1>
+                {activeFilter && (
+                  <span className="flex items-center gap-1 bg-brand-500/20 text-brand-400 text-xs px-2 py-1 rounded-full border border-brand-500/30">
+                    {activeFilter}
+                    <button onClick={() => setActiveFilter(null)} className="ml-1 hover:text-white">&times;</button>
+                  </span>
+                )}
+              </div>
+              
+              {/* Precedent Sub-tabs */}
+              {activeSection === 'precedent' && (
+                <div className="flex items-center gap-6 mt-2 ml-1">
+                   <button 
+                    onClick={() => setPrecedentFilter('all')}
+                    className={`text-xs font-bold uppercase tracking-widest pb-1 border-b-2 transition-all ${precedentFilter === 'all' ? 'border-brand-500 text-white' : 'border-transparent text-muted-foreground hover:text-white'}`}
+                   >
+                    All Precedents
+                   </button>
+                   <button 
+                    onClick={() => setPrecedentFilter('library')}
+                    className={`text-xs font-bold uppercase tracking-widest pb-1 border-b-2 transition-all ${precedentFilter === 'library' ? 'border-brand-500 text-white' : 'border-transparent text-muted-foreground hover:text-white'}`}
+                   >
+                    Library Additions
+                   </button>
+                </div>
               )}
             </div>
             <div className="relative">

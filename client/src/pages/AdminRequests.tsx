@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { ArrowLeft, Clock, CheckCircle, ExternalLink, FileUp, Loader2 } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import UploadModal from '../components/UploadModal';
 
 export default function AdminRequests() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [requests, setRequests] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isUploadOpen, setIsUploadOpen] = useState(false);
@@ -80,9 +81,9 @@ export default function AdminRequests() {
 
       <header className="h-16 border-b border-white/5 bg-surface/50 backdrop-blur sticky top-0 z-10 flex items-center justify-between px-6">
         <div className="flex items-center gap-4">
-          <Link to="/library" className="p-2 -ml-2 text-muted-foreground hover:text-white transition-colors">
+          <button onClick={() => navigate(-1)} className="p-2 -ml-2 text-muted-foreground hover:text-white transition-colors">
             <ArrowLeft className="w-5 h-5" />
-          </Link>
+          </button>
           <h1 className="text-lg font-display font-semibold">Library Upload Requests</h1>
         </div>
         <div className="flex items-center gap-3">

@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { requireAuth, requireRole, upload } from '../middleware';
+import { uploadLimiter } from '../middleware/rateLimit';
 import { documentsController } from '../controllers/documents.controller';
 
 const router = Router();
@@ -10,6 +11,7 @@ router.post(
   '/upload',
   requireAuth,
   requireRole('managing_partner'),
+  uploadLimiter,
   upload.single('file'),
   documentsController.uploadFile
 );
@@ -20,6 +22,14 @@ router.get(
   '/',
   requireAuth,
   documentsController.listDocuments
+);
+
+// Route: GET /api/documents/:id
+// Retrieves metadata for a specific document
+router.get(
+  '/:id',
+  requireAuth,
+  documentsController.getDocument
 );
 
 // Route: GET /api/documents/:id/view-url

@@ -1,15 +1,17 @@
 import { useState } from 'react';
 import { useNavigate, Navigate } from 'react-router-dom';
-import { Shield, Lock, Mail, Loader2, AlertCircle, ChevronRight } from 'lucide-react';
+import { Shield, Lock, Mail, Loader2, AlertCircle, CheckCircle, ChevronRight } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 export default function Login() {
-  const { user, login } = useAuth();
+  const { user, login, resetPassword } = useAuth();
   const navigate = useNavigate();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [resetLoading, setResetLoading] = useState(false);
+  const [success, setSuccess] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   if (user) return <Navigate to="/library" replace />;
@@ -26,6 +28,26 @@ export default function Login() {
       setError(err.message || 'Invalid firm credentials');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleReset = async () => {
+    if (!email) {
+      setError("Please enter your firm email first.");
+      return;
+    }
+
+    setResetLoading(true);
+    setError(null);
+    setSuccess(null);
+
+    try {
+      await resetPassword(email);
+      setSuccess("Recovery link sent! Please check your email inbox.");
+    } catch (err: any) {
+      setError(err.message || "Failed to send reset email.");
+    } finally {
+      setResetLoading(false);
     }
   };
 
@@ -57,6 +79,12 @@ export default function Login() {
             </div>
           )}
 
+          {success && (
+            <div className="mb-6 p-3 bg-green-500/10 border border-green-500/20 rounded-xl text-green-400 text-xs flex items-center gap-2 animate-fade-in">
+              <CheckCircle className="w-4 h-4 shrink-0" /> {success}
+            </div>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
               <label className="text-xs font-medium text-muted-foreground mb-1.5 block ml-1">Firm Email</label>
@@ -79,7 +107,14 @@ export default function Login() {
             <div>
               <div className="flex justify-between items-center mb-1.5 px-1">
                 <label className="text-xs font-medium text-muted-foreground block">Password</label>
-                <button type="button" className="text-[10px] text-brand-500 hover:text-brand-400 font-medium">Reset?</button>
+                <button 
+                  type="button" 
+                  onClick={handleReset}
+                  disabled={resetLoading}
+                  className="text-[10px] text-brand-500 hover:text-brand-400 font-medium disabled:opacity-50"
+                >
+                  {resetLoading ? 'Sending...' : 'Reset?'}
+                </button>
               </div>
               <div className="relative group/input">
                 <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within/input:text-brand-400 transition-colors">

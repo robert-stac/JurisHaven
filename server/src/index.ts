@@ -25,33 +25,17 @@ import notificationsRoutes from './routes/notifications.routes';
 
 // Middleware
 import { errorHandler } from './middleware';
-import rateLimit from 'express-rate-limit';
+import { globalLimiter, searchLimiter } from './middleware/rateLimit';
 
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Rate Limiters
-const globalLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 300, // limit each IP to 300 requests per windowMs
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: { error: 'Too many requests from this IP, please try again after 15 minutes' }
-});
+// Enable trust proxy for correct IP detection in Docker/Proxies
+app.set('trust proxy', 1);
 
-const uploadLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000, // 1 hour
-  max: 20, // limit each IP to 20 uploads per windowMs
-  message: { error: 'Upload limit reached, please try again later' }
-});
-
-const searchLimiter = rateLimit({
-  windowMs: 60 * 1000, // 1 minute
-  max: 100, // limit each IP to 100 searches per windowMs
-  message: { error: 'Search rate limit exceeded' }
-});
+// Limiters are now imported from middleware/rateLimit
 
 // Security Middleware
 app.use(helmet({
@@ -95,10 +79,10 @@ app.use(globalLimiter);
 // Main Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', usersRoutes);
-app.use('/api/documents', uploadLimiter, documentsRoutes);
+app.use('/api/documents', documentsRoutes);
 app.use('/api/categories', categoriesRoutes);
 app.use('/api/search', searchLimiter, searchRoutes);
-app.use('/api/precedents', uploadLimiter, precedentsRoutes);
+app.use('/api/precedents', precedentsRoutes);
 app.use('/api/requests', requestsRoutes);
 app.use('/api/notifications', notificationsRoutes);
 
